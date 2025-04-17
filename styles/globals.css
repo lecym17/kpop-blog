@@ -1,7 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 html,
 body {
   overflow-x: hidden;
+}
+
+/* Improve spacing between paragraphs AND center them */
+.prose p {
+  margin-bottom: 1.25rem; /* Make spaces smaller between paragraphs */
+  text-align: center; /* Center-align paragraph text */
 }

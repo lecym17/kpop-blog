@@ -1,75 +1,67 @@
-import fs from 'fs'
-import path from 'path'
-import matter from 'gray-matter'
-import { GetStaticPaths, GetStaticProps } from 'next'
-import { useRouter } from 'next/router'
+import fs from "fs";
+import path from "path";
+import matter from "gray-matter";
+import { GetStaticPaths, GetStaticProps } from "next";
+import { remark } from "remark";
+import remarkRehype from "remark-rehype";
+import rehypeRaw from "rehype-raw";
+import rehypeStringify from "rehype-stringify";
+import Head from "next/head";
 
-type Theory = {
-  title: string
-  date: string
-  user: string
-  tags: string[]
-  likes: number
-  comments: number
-  tag: string
-  icon: string
-  content: string
-}
-
-export const getStaticPaths: GetStaticPaths = async () => {
-  const files = fs.readdirSync(path.join('posts'))
-
-  const paths = files.map(filename => ({
-    params: {
-      slug: filename.replace('.md', '')
-    }
-  }))
-
-  return {
-    paths,
-    fallback: false
-  }
-}
-
+// Load the content of each MD file
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const slug = params?.slug as string
-  const markdownWithMeta = fs.readFileSync(path.join('posts', slug + '.md'), 'utf-8')
-  const { data, content } = matter(markdownWithMeta)
+  const slug = params?.slug as string;
+  const markdownWithMeta = fs.readFileSync(
+    path.join("posts", slug + ".md"),
+    "utf-8"
+  );
+  const { data, content } = matter(markdownWithMeta);
+
+  const processedContent = await remark()
+    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeRaw)
+    .use(rehypeStringify)
+    .process(content);
+
+  const contentHtml = processedContent.toString();
 
   return {
     props: {
       theory: {
         ...data,
-        content
-      }
-    }
-  }
-}
+        content: contentHtml,
+      },
+    },
+  };
+};
 
-export default function TheoryPage({ theory }: { theory: Theory }) {
-  const router = useRouter()
+// Tell Next.js which slugs exist
+export const getStaticPaths: GetStaticPaths = async () => {
+  const files = fs.readdirSync(path.join("posts"));
 
+  const paths = files.map((filename) => ({
+    params: {
+      slug: filename.replace(".md", ""),
+    },
+  }));
+
+  return {
+    paths,
+    fallback: false,
+  };
+};
+
+// Page component
+export default function TheoryPage({ theory }: { theory: any }) {
   return (
-    <div className="max-w-3xl mx-auto px-4 py-12">
-      <button onClick={() => router.back()} className="mb-4 text-sm text-purple-600 hover:underline">
-        ← Back to home
-      </button>
+    <>
+      <Head>
+        <title>{theory.title}</title>
+      </Head>
 
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">{theory.title}</h1>
-        <div className="text-sm text-gray-500">@{theory.user} • {theory.date}</div>
-        <div className="flex gap-2 mt-3 text-xs">
-          {theory.tags.map((tag, i) => (
-            <span key={i} className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full">{tag}</span>
-          ))}
-        </div>
-      </div>
-
-      <div className="prose max-w-none prose-purple">
-        {theory.content.split('\n').map((line, i) => (
-          <p key={i}>{line}</p>
-        ))}
-      </div>
-    </div>
-  )
+      <article className="prose prose-lg mx-auto py-10 prose-headings:text-center prose-p:text-center prose-img:mx-auto">
+        <div dangerouslySetInnerHTML={{ __html: theory.content }} />
+      </article>
+    </>
+  );
 }
