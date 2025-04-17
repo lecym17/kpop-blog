@@ -8,16 +8,18 @@ import Head from "next/head";
 // --- Types
 
 type Theory = {
-  title: string;
-  date: string;
-  user: string;
-  tags: string[];
-  likes: number;
-  comments: number;
-  tag: string;
-  icon: string;
-  slug: string;
-};
+  title: string
+  subtitle: string
+  date: string
+  user: string
+  tags: string[]
+  likes: number
+  comments: number
+  tag: string
+  icon: string
+  slug: string
+  thumbnail: string // <--- ADD THIS LINE
+}
 
 // --- Static Props
 
